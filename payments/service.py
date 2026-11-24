@@ -15,7 +15,8 @@ class PaymentService:
         order = self._repository.get(order_id)
         if order is None:
             raise OrderNotFoundError(order_id)
+        if order.status is OrderStatus.PAID:
+            raise ValueError("La orden ya fue pagada")
         result = self._gateway.charge(order.id, order.total)
         order.status = OrderStatus.PAID if result.approved else OrderStatus.FAILED
         self._repository.save(order)
-        
