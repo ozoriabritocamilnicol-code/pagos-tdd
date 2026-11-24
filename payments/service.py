@@ -13,6 +13,6 @@ class PaymentService:
 
     def pay(self, order_id):
         order = self._repository.get(order_id)
-        self._gateway.charge(order.id, order.total)
-        order.status = OrderStatus.PAID
+        result = self._gateway.charge(order.id, order.total)
+        order.status = OrderStatus.PAID if result.approved else OrderStatus.FAILED
         self._repository.save(order)
