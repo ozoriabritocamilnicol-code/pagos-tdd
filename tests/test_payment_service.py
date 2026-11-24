@@ -28,3 +28,14 @@ class PaymentServiceTest(unittest.TestCase):
         self.assertEqual(order.status, OrderStatus.PAID)
         self.gateway.charge.assert_called_once_with("A1", Decimal("50.00"))  # MOCK
         self.repository.save.assert_called_once_with(order)  # MOCK
+
+    def test_declined_payment_marks_order_failed_and_sends_no_receipt(self):
+        order = self._given_order()
+        self.gateway.charge.return_value = ChargeResult(False)
+
+        self.service.pay("A1")
+
+        self.assertEqual(order.status, OrderStatus.FAILED)
+        self.repository.save.assert_called_once_with(order)
+        self.notifier.send_receipt.assert_not_called()
+    
