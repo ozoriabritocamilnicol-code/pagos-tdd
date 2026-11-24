@@ -1,4 +1,9 @@
+from decimal import Decimal
+
 from .models import OrderStatus
+
+DISCOUNT_THRESHOLD = Decimal("100.00")
+DISCOUNT_RATE = Decimal("0.10")
 
 
 class OrderNotFoundError(Exception):
@@ -13,7 +18,8 @@ class PaymentService:
 
     def pay(self, order_id):
         order = self._load_payable_order(order_id)
-        result = self._gateway.charge(order.id, order.total)
+        amount = self._amount_to_charge(order)
+        result = self._gateway.charge(order.id, amount)
         if result.approved:
             order.status = OrderStatus.PAID
             self._repository.save(order)
@@ -29,3 +35,8 @@ class PaymentService:
         if order.status is OrderStatus.PAID:
             raise ValueError("La orden ya fue pagada")
         return order
+
+    def _amount_to_charge(self, order):
+        if order.total > DISCOUNT_THRESHOLD:
+            return (order.total * (1 - DISCOUNT_RATE)).quantize(Decimal("0.01"))
+        return order.total
