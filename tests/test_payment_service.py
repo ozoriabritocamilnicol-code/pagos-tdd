@@ -54,3 +54,11 @@ class PaymentServiceTest(unittest.TestCase):
             self.service.pay("A1")
 
         self.gateway.charge.assert_not_called()
+
+    def test_approved_payment_sends_receipt_with_gateway_reference(self):
+        self._given_order()
+        self.gateway.charge.return_value = ChargeResult(True, "tx-123")
+
+        self.service.pay("A1")
+
+        self.notifier.send_receipt.assert_called_once_with("A1", "tx-123")
