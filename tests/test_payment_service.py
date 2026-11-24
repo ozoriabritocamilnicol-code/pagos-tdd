@@ -38,4 +38,19 @@ class PaymentServiceTest(unittest.TestCase):
         self.assertEqual(order.status, OrderStatus.FAILED)
         self.repository.save.assert_called_once_with(order)
         self.notifier.send_receipt.assert_not_called()
-    
+
+    def test_unknown_order_raises_and_never_calls_gateway(self):
+        self.repository.get.return_value = None
+
+        with self.assertRaises(OrderNotFoundError):
+            self.service.pay("NOPE")
+
+        self.gateway.charge.assert_not_called()
+
+    def test_already_paid_order_is_not_charged_again(self):
+        self._given_order(status=OrderStatus.PAID)
+
+        with self.assertRaises(ValueError):
+            self.service.pay("A1")
+
+        self.gateway.charge.assert_not_called()

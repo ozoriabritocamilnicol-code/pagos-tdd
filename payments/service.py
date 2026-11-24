@@ -13,13 +13,9 @@ class PaymentService:
 
     def pay(self, order_id):
         order = self._repository.get(order_id)
+        if order is None:
+            raise OrderNotFoundError(order_id)
         result = self._gateway.charge(order.id, order.total)
         order.status = OrderStatus.PAID if result.approved else OrderStatus.FAILED
         self._repository.save(order)
-    def test_unknown_order_raises_and_never_calls_gateway(self):
-        self.repository.get.return_value = None
-
-        with self.assertRaises(OrderNotFoundError):
-            self.service.pay("NOPE")
-
-        self.gateway.charge.assert_not_called()
+        
