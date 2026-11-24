@@ -62,3 +62,22 @@ class PaymentServiceTest(unittest.TestCase):
         self.service.pay("A1")
 
         self.notifier.send_receipt.assert_called_once_with("A1", "tx-123")
+
+
+
+
+    def test_orders_over_100_get_10_percent_discount(self):
+        self._given_order(total="200.00")
+        self.gateway.charge.return_value = ChargeResult(True, "tx-9")
+
+        self.service.pay("A1")
+
+        self.gateway.charge.assert_called_once_with("A1", Decimal("180.00"))
+
+    def test_orders_of_exactly_100_get_no_discount(self):
+        self._given_order(total="100.00")
+        self.gateway.charge.return_value = ChargeResult(True, "tx-9")
+
+        self.service.pay("A1")
+
+        self.gateway.charge.assert_called_once_with("A1", Decimal("100.00"))
